@@ -11,7 +11,8 @@ const fs = require('fs');
 const path = require('path');
 const converter = require('@bishal-9/video-to-mp3-converter');
 const fullPath = path.join(__dirname, 'SONG');
-
+const { Leopard } = require("@picovoice/leopard-node");
+var zip = require('file-zip');
 
 
 const app = express();
@@ -19,10 +20,12 @@ app.use(express.json());
 app.use(cors({ origin: true }));
 app.use("/uploads", express.static("./uploads"));
 app.use("/VIDEO", express.static("./VIDEO"));
+app.use(express.static("./SONG"));
 app.use("/AD", express.static("./AD"));
 
 const CHAT_ENGINE_PROJECT_ID = "eed0fe8c-e598-4f52-a41c-e11bab68561d";
 const CHAT_ENGINE_PRIVATE_KEY = "a6e8c42a-4cd3-4776-a919-d450ee6be3e3";
+
 
 app.post("/signup", async (req, res) => {
   const { username, secret, email, first_name, last_name } = req.body;
@@ -117,30 +120,19 @@ app.post("/VIDEO", VIDEO.single('VIDEO'), (req, res, next) => {
   const USERUNIQUEID = req.body.USERUNIQUEID;
   const VIDEO = req.file.filename;
   const DESTINATION = req.file.destination;
+  const pathToVideo = DESTINATION + VIDEO;
 
-  // const pathToVideo = DESTINATION + VIDEO;
-  // const songName = "SMAPLE";
+  // const songName = `${TITLE.replace(/ +/g, "")}`;
+  // converter(pathToVideo, `./SONG/${songName}`, VIDEO);
 
-  // converter(pathToVideo, songName);
+  // const zipFileName = `${DESTINATION + VIDEO}`;
 
-  // const directoryPath = path.join(__dirname, "SONG");
-  // console.log(directoryPath);
-
-  // fs.readdir(directoryPath, (err, files) => {
+  // zip.zipFile([`${DESTINATION + VIDEO}`], zipFileName, function (err) {
   //   if (err) {
-  //     console.error(err);
-  //     return res.status(500).send(err);
+  //     console.log('zip error', err);
+  //   } else {
+  //     console.log(`Zip file "${zipFileName}" created successfully`);
   //   }
-
-  //   const fileList = files.map((file) => file);
-  //   con.query(`INSERT INTO USERSONG (SONG) values ('${directoryPath+"/"+fileList}')`, (ERR, DATA, fields) => {
-  //     if (ERR) {
-  //       console.log(ERR);
-  //     }
-  //     else {
-  //       res.send(DATA);
-  //     }
-  //   })
   // });
 
   con.query(`INSERT INTO USERVIDEOLIST (TITLE,VIDEO,USERID) values ('${TITLE}','${DESTINATION + VIDEO}','${USERUNIQUEID}')`, (ERR, DATA, fields) => {
@@ -151,6 +143,19 @@ app.post("/VIDEO", VIDEO.single('VIDEO'), (req, res, next) => {
       res.send(DATA);
     }
   })
+
+  // const zipFile = `${VIDEO}`;
+  // zip.unzip(`${VIDEO}`, zipFile, function (err) {
+  //   if (err) {
+  //     console.log('unzip error', err);
+  //   } else {
+  //     console.log(`Zip file "${zipFileName}" extracted successfully to "${destinationPath}"`);
+  //   }
+  // });
+  setTimeout(() => {
+    METHOD(VIDEO, songName)
+  }, 60000)
+
 });
 
 
@@ -208,6 +213,16 @@ app.get("/VIDEOINFORMATION", (req, res) => {
 
 app.get("/USERVIDEOLISTINFORMATION", VIDEO.single('VIDEO'), (req, res) => {
   con.query("SELECT * FROM USERVIDEOLIST", (ERR, DATA) => {
+    // for (let i = 0; i < DATA.length; i++) {
+    //   const filepath = DATA[i].VIDEO;
+    //   zip.unzip(`${filepath}`, './VIDEO', function (err) {
+    //     if (err) {
+    //       console.log('unzip error', err)
+    //     } else {
+    //       console.log('unzip success');
+    //     }
+    //   })
+    // }
     if (ERR) {
       console.log(ERR);
     }
@@ -217,7 +232,8 @@ app.get("/USERVIDEOLISTINFORMATION", VIDEO.single('VIDEO'), (req, res) => {
   })
 })
 
-app.post("/USERSIGNUP", upload.single('IMAGE'),(req,res)=>{
+app.post("/USERSIGNUP", upload.single('IMAGE'), (req, res) => {
+  console.log(req);
   const USERNAME = req.body.USERNAME;
   const PASSWORD = req.body.PASSWORD;
   const EMAIL = req.body.EMAIL;
@@ -234,73 +250,100 @@ app.post("/USERSIGNUP", upload.single('IMAGE'),(req,res)=>{
   })
 })
 
-  app.get("/USERLOGIN",(req,res)=>{
-    con.query("SELECT * FROM USERHOMEPAGELOGIN",(ERR,DATA)=>{
-      if(ERR){
-        console.log(ERR);
-      }
-      else{
-        res.send(DATA);
-      }
-    })
-  });
-
-  app.get("/USERIMAGEDATA",(req,res)=>{
-    con.query("SELECT * FROM USERHOMEPAGELOGIN",(ERR,DATA)=>{
-      if(ERR){
-        console.log(ERR);
-      }
-      else{
-        res.send(DATA);
-      }
-    })
-  });
-
-  app.post("/STATUS",(req,res)=>{
-    console.log( req.body);
-    var ID = req.body.id;
-    var USERNAME = req.body.USERNAME;
-    var STATUS = req.body.STATUS;
-    var USERGENERATE = req.body.USERGENERATEDID;
-    if(STATUS=="Follow"){
-      STATUS="Following";
+app.get("/USERLOGIN", (req, res) => {
+  con.query("SELECT * FROM USERHOMEPAGELOGIN", (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
     }
-    console.log(STATUS);
-
-    con.query(`INSERT INTO USERSTATUS (USERID,STATUS,USERNAME,USERGENERATEID) values ('${ID}','${STATUS}','${USERNAME}','${USERGENERATE}')`, (ERR, DATA, fields) => {
-      if (ERR) {
-        console.log(ERR);
-      }
-      else {
-        res.send(DATA);
-      }
-    })
+    else {
+      res.send(DATA);
+    }
   })
+});
+
+app.get("/USERIMAGEDATA", (req, res) => {
+  con.query("SELECT * FROM USERHOMEPAGELOGIN", (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+});
+
+app.post("/STATUS", (req, res) => {
+  console.log(req.body);
+  var ID = req.body.id;
+  var USERNAME = req.body.USERNAME;
+  var STATUS = req.body.STATUS;
+  var USERGENERATE = req.body.USERGENERATEDID;
+  if (STATUS == "Follow") {
+    STATUS = "Following";
+  }
+  console.log(STATUS);
+
+  con.query(`INSERT INTO USERSTATUS (USERID,STATUS,USERNAME,USERGENERATEID) values ('${ID}','${STATUS}','${USERNAME}','${USERGENERATE}')`, (ERR, DATA, fields) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+})
 
 
-  app.get("/STATUS",(req,res)=>{
-    con.query("SELECT USERID,STATUS, MAX(ID) AS LatestID FROM USERSTATUS GROUP BY USERID",(ERR,DATA)=>{
-      if(ERR){
-        console.log(ERR);
-      }
-      else{
-        res.send(DATA);
-      }
-    })
+app.get("/STATUS", (req, res) => {
+  con.query("SELECT USERID,STATUS, MAX(ID) AS LatestID FROM USERSTATUS GROUP BY USERID", (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+});
+
+app.get("/USERCOUNTSTATUS", (req, res) => {
+  con.query("SELECT USERID, count(*) AS USERCOUNT FROM USERSTATUS GROUP BY USERID", (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+});
+
+app.get("/USERSONG", (req, res) => {
+
+  con.query('SELECT SUBSTRING_INDEX(SONG, "/", -1) AS USERSONG, USERVIDEO, MAX(ID) AS ID FROM USERSONG GROUP BY SONG, USERVIDEO', (err, data) => {
+    if (err) {
+      console.log(err);
+    } else {
+      res.send(data);
+    }
   });
-
-  app.get("/USERCOUNTSTATUS",(req,res)=>{
-    con.query("SELECT USERID, count(*) AS USERCOUNT FROM USERSTATUS GROUP BY USERID",(ERR,DATA)=>{
-      if(ERR){
-        console.log(ERR);
-      }
-      else{
-        res.send(DATA);
-      }
-    })
+  con.query('DELETE FROM USERSONG WHERE SONG IS NULL OR USERVIDEO IS NULL', (err, result) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(result.affectedRows + ' rows deleted');
+    }
   });
+});
 
-   
+const METHOD = (VIDEO, SONGNAME) => {
+  con.query(`IF  EXISTS(SELECT * FROM USERSONG WHERE SONG ='${"SONG/" + SONGNAME + ".mp3"}') 
+  THEN 
+     INSERT INTO USERSONG (SONG,USERVIDEO) VALUES ('${"SONG/" + SONGNAME + ".mp3"}','${VIDEO}');
+  END IF`, (ERR, DATA, fields) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+  })
+}
 
 app.post("/contact", (req, res) => {
   const MESSAGE = req.body.MESSAGE;
