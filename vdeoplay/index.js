@@ -13,6 +13,8 @@ const converter = require('@bishal-9/video-to-mp3-converter');
 const fullPath = path.join(__dirname, 'SONG');
 const { Leopard } = require("@picovoice/leopard-node");
 var zip = require('file-zip');
+const ffmpeg = require('fluent-ffmpeg');
+
 
 
 const app = express();
@@ -122,9 +124,6 @@ app.post("/VIDEO", VIDEO.single('VIDEO'), (req, res, next) => {
   const DESTINATION = req.file.destination;
   const pathToVideo = DESTINATION + VIDEO;
 
-  // const songName = `${TITLE.replace(/ +/g, "")}`;
-  // converter(pathToVideo, `./SONG/${songName}`, VIDEO);
-
   // const zipFileName = `${DESTINATION + VIDEO}`;
 
   // zip.zipFile([`${DESTINATION + VIDEO}`], zipFileName, function (err) {
@@ -135,27 +134,70 @@ app.post("/VIDEO", VIDEO.single('VIDEO'), (req, res, next) => {
   //   }
   // });
 
-  con.query(`INSERT INTO USERVIDEOLIST (TITLE,VIDEO,USERID) values ('${TITLE}','${DESTINATION + VIDEO}','${USERUNIQUEID}')`, (ERR, DATA, fields) => {
-    if (ERR) {
-      console.log(ERR);
-    }
-    else {
-      res.send(DATA);
-    }
+  setTimeout(() => {
+    // Output file path
+    const outputFile = `${DESTINATION}${VIDEO}` + ".mp4";
+    console.log(outputFile);
+
+    // Create a new command using fluent-ffmpeg
+    const command = ffmpeg();
+
+    // Set input stream
+    command.input(`${DESTINATION + VIDEO}`);
+
+    // Set video codec to libx264 to maintain quality
+    command.videoCodec('libx264');
+
+    // Set a lower bitrate to reduce file size
+    command.videoBitrate('500k');
+
+    // Set audio codec to aac
+    command.audioCodec('aac');
+
+    // Set a lower audio bitrate to reduce file size
+    command.audioBitrate('128k');
+
+    // Set encoding preset to 'fast' to compress faster
+    // command.outputOptions('-preset fast');
+
+    // Set encoding preset to 'ultrafast' to compress faster
+    // command.outputOptions('-preset ultrafast');
+
+    // Enable hardware acceleration for encoding
+    // command.outputOptions('-hwaccel auto');
+    // command.outputOptions('-c:v h264_nvenc');
+
+    // Set a target file size of 1MB
+    // command.outputOptions('-fs 3000k');
+
+    // Set output file path
+    command.output(outputFile);
+
+    // Run the command and log the output
+    command.on('error', (err) => {
+      console.error('An error occurred:', err.message);
+    }).on('end', () => {
+      console.log('Compression complete!');
+    }).run();
+    VIDEOFUNCTION(outputFile);
   })
 
-  // const zipFile = `${VIDEO}`;
-  // zip.unzip(`${VIDEO}`, zipFile, function (err) {
-  //   if (err) {
-  //     console.log('unzip error', err);
-  //   } else {
-  //     console.log(`Zip file "${zipFileName}" extracted successfully to "${destinationPath}"`);
-  //   }
-  // });
-  setTimeout(() => {
-    METHOD(VIDEO, songName)
-  }, 60000)
+  const VIDEOFUNCTION = (outputFile) => {
+    const songName = `${TITLE.replace(/ +/g, "")}`;
+    converter(pathToVideo, `./SONG/${songName}`, VIDEO);
 
+    con.query(`INSERT INTO USERVIDEOLIST (TITLE,VIDEO,USERID) values ('${TITLE}','${outputFile}','${USERUNIQUEID}')`, (ERR, DATA, fields) => {
+      if (ERR) {
+        console.log(ERR);
+      }
+      else {
+        res.send(DATA);
+      }
+    })
+    setTimeout(() => {
+      METHOD(VIDEO, songName)
+    }, 60000)
+  }
 });
 
 
