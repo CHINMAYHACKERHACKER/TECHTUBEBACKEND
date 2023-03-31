@@ -124,6 +124,11 @@ app.post("/VIDEO", VIDEO.single('VIDEO'), (req, res, next) => {
   const DESTINATION = req.file.destination;
   const pathToVideo = DESTINATION + VIDEO;
 
+  const Fileoutput =DESTINATION + VIDEO + "/1080P" + ".mp4";
+  const Fileout = DESTINATION + VIDEO+ "/720p" + ".mp4";
+  const FileFile = DESTINATION + VIDEO + "/540p" + ".mp4";
+  const FileVideo = DESTINATION + VIDEO + "/360P" + ".mp4";
+
   // const zipFileName = `${DESTINATION + VIDEO}`;
 
   // zip.zipFile([`${DESTINATION + VIDEO}`], zipFileName, function (err) {
@@ -134,28 +139,37 @@ app.post("/VIDEO", VIDEO.single('VIDEO'), (req, res, next) => {
   //   }
   // });
 
-  setTimeout(() => {
     // Output file path
-    const outputFile = `${DESTINATION}${VIDEO}` + ".mp4";
-    console.log(outputFile);
+    // const outputFile = `${DESTINATION}${VIDEO}` + "/1080P" + ".mp4";
+    // console.log(outputFile);
+    // const output = `${DESTINATION}${VIDEO}` + "/720p" + ".mp4";
+    // console.log(output);
+    // const out = `${DESTINATION}${VIDEO}` + "/540p" + ".mp4";
+    // console.log(out);
+    // const File = `${DESTINATION}${VIDEO}` + "/360P" + ".mp4";
+    // console.log(File);
 
     // Create a new command using fluent-ffmpeg
-    const command = ffmpeg();
+    // const command = ffmpeg();
 
     // Set input stream
-    command.input(`${DESTINATION + VIDEO}`);
+    // command.input(Fileoutput);
+    // command.input(Fileout);
+    // command.input(FileFile);
+    // command.input(FileVideo);
+
 
     // Set video codec to libx264 to maintain quality
-    command.videoCodec('libx264');
+    // command.videoCodec('libx264');
 
     // Set a lower bitrate to reduce file size
-    command.videoBitrate('500k');
+    // command.videoBitrate('800k');
 
     // Set audio codec to aac
-    command.audioCodec('aac');
+    // command.audioCodec('aac');
 
     // Set a lower audio bitrate to reduce file size
-    command.audioBitrate('128k');
+    // command.audioBitrate('128k');
 
     // Set encoding preset to 'fast' to compress faster
     // command.outputOptions('-preset fast');
@@ -171,33 +185,89 @@ app.post("/VIDEO", VIDEO.single('VIDEO'), (req, res, next) => {
     // command.outputOptions('-fs 3000k');
 
     // Set output file path
-    command.output(outputFile);
+    // command.output(outputFile);
+    // command.output(output);
+    // command.output(out);
+    // command.output(File);
+
 
     // Run the command and log the output
-    command.on('error', (err) => {
-      console.error('An error occurred:', err.message);
-    }).on('end', () => {
-      console.log('Compression complete!');
-    }).run();
-    VIDEOFUNCTION(outputFile);
-  })
+    // command.on('error', (err) => {
+    //   console.error('An error occurred:', err.message);
+    // }).on('end', () => {
+    //   console.log('Compression complete!');
+    // }).run();
 
-  const VIDEOFUNCTION = (outputFile) => {
-    const songName = `${TITLE.replace(/ +/g, "")}`;
-    converter(pathToVideo, `./SONG/${songName}`, VIDEO);
 
-    con.query(`INSERT INTO USERVIDEOLIST (TITLE,VIDEO,USERID) values ('${TITLE}','${outputFile}','${USERUNIQUEID}')`, (ERR, DATA, fields) => {
-      if (ERR) {
-        console.log(ERR);
-      }
-      else {
-        res.send(DATA);
-      }
-    })
-    setTimeout(() => {
-      METHOD(VIDEO, songName)
-    }, 60000)
-  }
+
+// Define video path
+
+// Create output directory if it doesn't exist
+
+// Define output file paths for each resolution
+const outputFile1080p = `${DESTINATION}${VIDEO}` +"1080p"+".mp4";
+const outputFile720p = `${DESTINATION}${VIDEO}` +"720p"+".mp4";
+const outputFile540p = `${DESTINATION}${VIDEO}` +"540p"+".mp4";
+const outputFile360p = `${DESTINATION}${VIDEO}` +"360p"+".mp4";
+
+// Create a new command using fluent-ffmpeg
+const command = ffmpeg();
+
+// Set input stream
+command.input(`${DESTINATION + VIDEO}`);
+
+// Set video codec to libx264 to maintain quality
+command.videoCodec('libx264');
+
+// Set a lower bitrate to reduce file size
+command.videoBitrate('800k');
+
+// Set audio codec to aac
+command.audioCodec('aac');
+
+// Set a lower audio bitrate to reduce file size
+command.audioBitrate('128k');
+
+// Set output file paths for each resolution
+command.output(outputFile1080p)
+  .videoFilters('scale=w=1920:h=1080')
+  .outputOptions('-c:a copy');
+command.output(outputFile720p)
+  .videoFilters('scale=w=1280:h=720')
+  .outputOptions('-c:a copy');
+command.output(outputFile540p)
+  .videoFilters('scale=w=960:h=540')
+  .outputOptions('-c:a copy');
+command.output(outputFile360p)
+  .videoFilters('scale=w=640:h=360')
+  .outputOptions('-c:a copy');
+
+// Run the command and log the output
+command.on('error', (err) => {
+  console.error('An error occurred:', err.message);
+}).on('end', () => {
+  console.log('Compression complete!');
+}).run();
+    // VIDEOFUNCTION(outputFile);
+
+  // const VIDEOFUNCTION = (outputFile) => {
+  //   con.query(`INSERT INTO USERVIDEOLIST (TITLE,VIDEO,USERID) values ('${TITLE}','${outputFile}','${USERUNIQUEID}')`, (ERR, DATA, fields) => {
+  //     if (ERR) {
+  //       console.log(ERR);
+  //     }
+  //     else {
+  //       res.send(DATA);
+  //     }
+  //   })
+  // }
+
+  // const songName = `${TITLE.replace(/ +/g, "")}`;
+  // converter(pathToVideo, `./SONG/${songName}`, VIDEO);
+
+  // setTimeout(() => {
+  //   METHOD(VIDEO, songName)
+  // }, 60000)
+
 });
 
 
@@ -377,6 +447,8 @@ app.get("/USERSONG", (req, res) => {
 });
 
 const METHOD = (VIDEO, SONGNAME) => {
+  console.log("VIDEO", VIDEO);
+  console.log("SONGNAME", SONGNAME);
   con.query(`IF  EXISTS(SELECT * FROM USERSONG WHERE SONG ='${"SONG/" + SONGNAME + ".mp3"}') 
   THEN 
      INSERT INTO USERSONG (SONG,USERVIDEO) VALUES ('${"SONG/" + SONGNAME + ".mp3"}','${VIDEO}');
