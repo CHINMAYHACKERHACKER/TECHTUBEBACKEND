@@ -6,6 +6,7 @@ const multer = require('multer')
 const upload = multer({ dest: 'uploads/' });
 const VIDEO = multer({ dest: 'VIDEO/' });
 const SONG = multer({ dest: 'SONG/' });
+const VIDEONOISEREDUCE = multer({ dest: 'VIDEONOISEREDUCE/' });
 var nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
@@ -14,14 +15,14 @@ const fullPath = path.join(__dirname, 'SONG');
 const { Leopard } = require("@picovoice/leopard-node");
 var zip = require('file-zip');
 const ffmpeg = require('fluent-ffmpeg');
-
-
+const { exec } = require('child_process');
 
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: true }));
 app.use("/uploads", express.static("./uploads"));
 app.use("/VIDEO", express.static("./VIDEO"));
+app.use("/VIDEONOISEREDUCE", express.static("./VIDEONOISEREDUCE"));
 app.use(express.static("./SONG"));
 app.use("/AD", express.static("./AD"));
 
@@ -122,147 +123,138 @@ app.post("/VIDEO", VIDEO.single('VIDEO'), (req, res, next) => {
   const USERUNIQUEID = req.body.USERUNIQUEID;
   const VIDEO = req.file.filename;
   const DESTINATION = req.file.destination;
+  const NOISEREDUCE = req.body.NOISEREDUCE;
+
   const pathToVideo = DESTINATION + VIDEO;
 
-  const Fileoutput =DESTINATION + VIDEO + "/1080P" + ".mp4";
-  const Fileout = DESTINATION + VIDEO+ "/720p" + ".mp4";
-  const FileFile = DESTINATION + VIDEO + "/540p" + ".mp4";
-  const FileVideo = DESTINATION + VIDEO + "/360P" + ".mp4";
+  if (NOISEREDUCE == "yes") {
+    const INPUTFILEPATH = DESTINATION + VIDEO;
+    const OUTPUTFILEPATH = `VIDEONOISEREDUCE/${VIDEO}` + ".mp4";
 
-  // const zipFileName = `${DESTINATION + VIDEO}`;
+    command = `ffmpeg -i ${INPUTFILEPATH} -af "highpass=f=100,lowpass=f=1,volume=80dB" -c:a libmp3lame -q:a 2 ${OUTPUTFILEPATH}`;
+    exec(command, (err, stdout, stderr) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log('ffmpeg command finished');
+      console.log('Output file path:', OUTPUTFILEPATH);
+      
+    const FILEONE = `${OUTPUTFILEPATH}` + "_" + "1080p" + ".mp4";
+    const outputFile1080p = FILEONE.replace(/\.mp4_/, '_') ;
 
-  // zip.zipFile([`${DESTINATION + VIDEO}`], zipFileName, function (err) {
-  //   if (err) {
-  //     console.log('zip error', err);
-  //   } else {
-  //     console.log(`Zip file "${zipFileName}" created successfully`);
-  //   }
-  // });
+    const FILETWO = `${OUTPUTFILEPATH}` + "_" + "720p" + ".mp4";
+    const outputFile720p = FILETWO.replace(/\.mp4_/, '_') ;
+    
+    const FILETHREE = `${OUTPUTFILEPATH}` + "_" + "540p" + ".mp4";
+    const outputFile540p = FILETHREE.replace(/\.mp4_/, '_') ;
 
-    // Output file path
-    // const outputFile = `${DESTINATION}${VIDEO}` + "/1080P" + ".mp4";
-    // console.log(outputFile);
-    // const output = `${DESTINATION}${VIDEO}` + "/720p" + ".mp4";
-    // console.log(output);
-    // const out = `${DESTINATION}${VIDEO}` + "/540p" + ".mp4";
-    // console.log(out);
-    // const File = `${DESTINATION}${VIDEO}` + "/360P" + ".mp4";
-    // console.log(File);
+    const FILEFIVE = `${OUTPUTFILEPATH}` + "_" + "360p" + ".mp4";
+    const outputFile360p = FILEFIVE.replace(/\.mp4_/, '_') ;
 
     // Create a new command using fluent-ffmpeg
-    // const command = ffmpeg();
+    const command = ffmpeg();
 
     // Set input stream
-    // command.input(Fileoutput);
-    // command.input(Fileout);
-    // command.input(FileFile);
-    // command.input(FileVideo);
-
+    command.input(`${OUTPUTFILEPATH}`);
 
     // Set video codec to libx264 to maintain quality
-    // command.videoCodec('libx264');
+    command.videoCodec('libx264');
 
     // Set a lower bitrate to reduce file size
-    // command.videoBitrate('800k');
+    command.videoBitrate('800k');
 
     // Set audio codec to aac
-    // command.audioCodec('aac');
+    command.audioCodec('aac');
 
     // Set a lower audio bitrate to reduce file size
-    // command.audioBitrate('128k');
+    command.audioBitrate('128k');
 
-    // Set encoding preset to 'fast' to compress faster
-    // command.outputOptions('-preset fast');
-
-    // Set encoding preset to 'ultrafast' to compress faster
-    // command.outputOptions('-preset ultrafast');
-
-    // Enable hardware acceleration for encoding
-    // command.outputOptions('-hwaccel auto');
-    // command.outputOptions('-c:v h264_nvenc');
-
-    // Set a target file size of 1MB
-    // command.outputOptions('-fs 3000k');
-
-    // Set output file path
-    // command.output(outputFile);
-    // command.output(output);
-    // command.output(out);
-    // command.output(File);
-
+    // Set output file paths for each resolution
+    command.output(outputFile1080p)
+      .videoFilters('scale=w=1920:h=1080')
+      .outputOptions('-c:a copy');
+    command.output(outputFile720p)
+      .videoFilters('scale=w=1280:h=720')
+      .outputOptions('-c:a copy');
+    command.output(outputFile540p)
+      .videoFilters('scale=w=960:h=540')
+      .outputOptions('-c:a copy');
+    command.output(outputFile360p)
+      .videoFilters('scale=w=640:h=360')
+      .outputOptions('-c:a copy');
 
     // Run the command and log the output
-    // command.on('error', (err) => {
-    //   console.error('An error occurred:', err.message);
-    // }).on('end', () => {
-    //   console.log('Compression complete!');
-    // }).run();
+    command.on('error', (err) => {
+      console.error('An error occurred:', err.message);
+    }).on('end', () => {
+      console.log('Compression complete!');
+      const INSERT_QUERY = `INSERT INTO USERVIDEOLIST (TITLE, USERID, VIDEOONE, VIDEOTWO, VIDEOTHREE, VIDEOFIVE) VALUES (?, ?, ?, ?, ?, ?)`;
+      const values = [TITLE, USERUNIQUEID, outputFile1080p, outputFile720p, outputFile540p, outputFile360p];
+      con.query(INSERT_QUERY, values, (err, result) => {
+        if (err) throw err;
+        console.log("Video inserted into database");
+        res.send("Video uploaded and compressed successfully");
+      });
+    }).run();
+    });
+  }
+
+  // Define output file paths for each resolution
+  // const outputFile1080p = `${DESTINATION}${VIDEO}` + "_" + "1080p" + ".mp4";
+  // const outputFile720p = `${DESTINATION}${VIDEO}` + "_" + "720p" + ".mp4";
+  // const outputFile540p = `${DESTINATION}${VIDEO}` + "_" + "540p" + ".mp4";
+  // const outputFile360p = `${DESTINATION}${VIDEO}` + "_" + "360p" + ".mp4";
 
 
+  // // Create a new command using fluent-ffmpeg
+  // const command = ffmpeg();
 
-// Define video path
+  // // Set input stream
+  // command.input(`${DESTINATION + VIDEO}`);
 
-// Create output directory if it doesn't exist
+  // // Set video codec to libx264 to maintain quality
+  // command.videoCodec('libx264');
 
-// Define output file paths for each resolution
-const outputFile1080p = `${DESTINATION}${VIDEO}` +"1080p"+".mp4";
-const outputFile720p = `${DESTINATION}${VIDEO}` +"720p"+".mp4";
-const outputFile540p = `${DESTINATION}${VIDEO}` +"540p"+".mp4";
-const outputFile360p = `${DESTINATION}${VIDEO}` +"360p"+".mp4";
+  // // Set a lower bitrate to reduce file size
+  // command.videoBitrate('800k');
 
-// Create a new command using fluent-ffmpeg
-const command = ffmpeg();
+  // // Set audio codec to aac
+  // command.audioCodec('aac');
 
-// Set input stream
-command.input(`${DESTINATION + VIDEO}`);
+  // // Set a lower audio bitrate to reduce file size
+  // command.audioBitrate('128k');
 
-// Set video codec to libx264 to maintain quality
-command.videoCodec('libx264');
+  // // Set output file paths for each resolution
+  // command.output(outputFile1080p)
+  //   .videoFilters('scale=w=1920:h=1080')
+  //   .outputOptions('-c:a copy');
+  // command.output(outputFile720p)
+  //   .videoFilters('scale=w=1280:h=720')
+  //   .outputOptions('-c:a copy');
+  // command.output(outputFile540p)
+  //   .videoFilters('scale=w=960:h=540')
+  //   .outputOptions('-c:a copy');
+  // command.output(outputFile360p)
+  //   .videoFilters('scale=w=640:h=360')
+  //   .outputOptions('-c:a copy');
 
-// Set a lower bitrate to reduce file size
-command.videoBitrate('800k');
-
-// Set audio codec to aac
-command.audioCodec('aac');
-
-// Set a lower audio bitrate to reduce file size
-command.audioBitrate('128k');
-
-// Set output file paths for each resolution
-command.output(outputFile1080p)
-  .videoFilters('scale=w=1920:h=1080')
-  .outputOptions('-c:a copy');
-command.output(outputFile720p)
-  .videoFilters('scale=w=1280:h=720')
-  .outputOptions('-c:a copy');
-command.output(outputFile540p)
-  .videoFilters('scale=w=960:h=540')
-  .outputOptions('-c:a copy');
-command.output(outputFile360p)
-  .videoFilters('scale=w=640:h=360')
-  .outputOptions('-c:a copy');
-
-// Run the command and log the output
-command.on('error', (err) => {
-  console.error('An error occurred:', err.message);
-}).on('end', () => {
-  console.log('Compression complete!');
-}).run();
-    // VIDEOFUNCTION(outputFile);
-
-  // const VIDEOFUNCTION = (outputFile) => {
-  //   con.query(`INSERT INTO USERVIDEOLIST (TITLE,VIDEO,USERID) values ('${TITLE}','${outputFile}','${USERUNIQUEID}')`, (ERR, DATA, fields) => {
-  //     if (ERR) {
-  //       console.log(ERR);
-  //     }
-  //     else {
-  //       res.send(DATA);
-  //     }
-  //   })
-  // }
+  // // Run the command and log the output
+  // command.on('error', (err) => {
+  //   console.error('An error occurred:', err.message);
+  // }).on('end', () => {
+  //   console.log('Compression complete!');
+  //   const INSERT_QUERY = `INSERT INTO USERVIDEOLIST (TITLE, USERID, VIDEOONE, VIDEOTWO, VIDEOTHREE, VIDEOFIVE) VALUES (?, ?, ?, ?, ?, ?)`;
+  //   const values = [TITLE, USERUNIQUEID, outputFile1080p, outputFile720p, outputFile540p, outputFile360p];
+  //   con.query(INSERT_QUERY, values, (err, result) => {
+  //     if (err) throw err;
+  //     console.log("Video inserted into database");
+  //     res.send("Video uploaded and compressed successfully");
+  //   });
+  // }).run();
 
   // const songName = `${TITLE.replace(/ +/g, "")}`;
-  // converter(pathToVideo, `./SONG/${songName}`, VIDEO);
+  // converter(pathToVideo, `./SONG/${songName}`);
 
   // setTimeout(() => {
   //   METHOD(VIDEO, songName)
@@ -325,16 +317,6 @@ app.get("/VIDEOINFORMATION", (req, res) => {
 
 app.get("/USERVIDEOLISTINFORMATION", VIDEO.single('VIDEO'), (req, res) => {
   con.query("SELECT * FROM USERVIDEOLIST", (ERR, DATA) => {
-    // for (let i = 0; i < DATA.length; i++) {
-    //   const filepath = DATA[i].VIDEO;
-    //   zip.unzip(`${filepath}`, './VIDEO', function (err) {
-    //     if (err) {
-    //       console.log('unzip error', err)
-    //     } else {
-    //       console.log('unzip success');
-    //     }
-    //   })
-    // }
     if (ERR) {
       console.log(ERR);
     }
