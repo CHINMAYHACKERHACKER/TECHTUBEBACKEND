@@ -130,6 +130,8 @@ app.post("/VIDEO", VIDEO.single('VIDEO'), (req, res, next) => {
   if (NOISEREDUCE == "yes") {
     const INPUTFILEPATH = DESTINATION + VIDEO;
     const OUTPUTFILEPATH = `VIDEONOISEREDUCE/${VIDEO}` + ".mp4";
+    const temp_OUTPUTFILEPATH = `${OUTPUTFILEPATH}`;
+
 
     command = `ffmpeg -i ${INPUTFILEPATH} -af "highpass=f=100,lowpass=f=1,volume=80dB" -c:a libmp3lame -q:a 2 ${OUTPUTFILEPATH}`;
     exec(command, (err, stdout, stderr) => {
@@ -137,66 +139,76 @@ app.post("/VIDEO", VIDEO.single('VIDEO'), (req, res, next) => {
         console.error(err);
         return;
       }
-      console.log('ffmpeg command finished');
-      console.log('Output file path:', OUTPUTFILEPATH);
+      console.log("BACKGROUND NOISE REOMVED");
 
-      const FILEONE = `${OUTPUTFILEPATH}` + "_" + "1080p" + ".mp4";
-      const outputFile1080p = FILEONE.replace(/\.mp4_/, '_');
 
-      const FILETWO = `${OUTPUTFILEPATH}` + "_" + "720p" + ".mp4";
-      const outputFile720p = FILETWO.replace(/\.mp4_/, '_');
+      COMMAND = `ffmpeg -y -i ${OUTPUTFILEPATH} -filter_complex "[0:a]equalizer=f=1000:width_type=h:width=100:g=-50,volume=15.0" ${OUTPUTFILEPATH + "temp.mp4"} && mv ${OUTPUTFILEPATH + "temp.mp4"} ${OUTPUTFILEPATH}`;
+      exec(COMMAND, (err, stdout, stderr) => {
+        if (err) {
+          console.error(err);
+          return;
+        }
+        console.log("NOICE ENHANCED");
+        
+        const FILEONE = `${OUTPUTFILEPATH}` + "_" + "1080p" + ".mp4";
+        const outputFile1080p = FILEONE.replace(/\.mp4_/, '_');
 
-      const FILETHREE = `${OUTPUTFILEPATH}` + "_" + "540p" + ".mp4";
-      const outputFile540p = FILETHREE.replace(/\.mp4_/, '_');
+        const FILETWO = `${OUTPUTFILEPATH}` + "_" + "720p" + ".mp4";
+        const outputFile720p = FILETWO.replace(/\.mp4_/, '_');
 
-      const FILEFIVE = `${OUTPUTFILEPATH}` + "_" + "360p" + ".mp4";
-      const outputFile360p = FILEFIVE.replace(/\.mp4_/, '_');
+        const FILETHREE = `${OUTPUTFILEPATH}` + "_" + "540p" + ".mp4";
+        const outputFile540p = FILETHREE.replace(/\.mp4_/, '_');
 
-      // Create a new command using fluent-ffmpeg
-      const command = ffmpeg();
+        const FILEFIVE = `${OUTPUTFILEPATH}` + "_" + "360p" + ".mp4";
+        const outputFile360p = FILEFIVE.replace(/\.mp4_/, '_');
 
-      // Set input stream
-      command.input(`${OUTPUTFILEPATH}`);
+        // Create a new command using fluent-ffmpeg
+        const command = ffmpeg();
 
-      // Set video codec to libx264 to maintain quality
-      command.videoCodec('libx264');
+        // Set input stream
+        command.input(`${OUTPUTFILEPATH}`);
 
-      // Set a lower bitrate to reduce file size
-      command.videoBitrate('800k');
+        // Set video codec to libx264 to maintain quality
+        command.videoCodec('libx264');
 
-      // Set audio codec to aac
-      command.audioCodec('aac');
+        // Set a lower bitrate to reduce file size
+        command.videoBitrate('800k');
 
-      // Set a lower audio bitrate to reduce file size
-      command.audioBitrate('128k');
+        // Set audio codec to aac
+        command.audioCodec('aac');
 
-      // Set output file paths for each resolution
-      command.output(outputFile1080p)
-        .videoFilters('scale=w=1920:h=1080')
-        .outputOptions('-c:a copy');
-      command.output(outputFile720p)
-        .videoFilters('scale=w=1280:h=720')
-        .outputOptions('-c:a copy');
-      command.output(outputFile540p)
-        .videoFilters('scale=w=960:h=540')
-        .outputOptions('-c:a copy');
-      command.output(outputFile360p)
-        .videoFilters('scale=w=640:h=360')
-        .outputOptions('-c:a copy');
+        // Set a lower audio bitrate to reduce file size
+        command.audioBitrate('128k');
 
-      // Run the command and log the output
-      command.on('error', (err) => {
-        console.error('An error occurred:', err.message);
-      }).on('end', () => {
-        console.log('Compression complete!');
-        const INSERT_QUERY = `INSERT INTO USERVIDEOLIST (TITLE, USERID, VIDEOONE, VIDEOTWO, VIDEOTHREE, VIDEOFIVE, VIDEONOISEREDUCE) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-        const values = [TITLE, USERUNIQUEID, outputFile1080p, outputFile720p, outputFile540p, outputFile360p, NOISEREDUCE];
-        con.query(INSERT_QUERY, values, (err, result) => {
-          if (err) throw err;
-          console.log("Video inserted into database");
-          res.send("Video uploaded and compressed successfully");
-        });
-      }).run();
+        // Set output file paths for each resolution
+        command.output(outputFile1080p)
+          .videoFilters('scale=w=1920:h=1080')
+          .outputOptions('-c:a copy');
+        command.output(outputFile720p)
+          .videoFilters('scale=w=1280:h=720')
+          .outputOptions('-c:a copy');
+        command.output(outputFile540p)
+          .videoFilters('scale=w=960:h=540')
+          .outputOptions('-c:a copy');
+        command.output(outputFile360p)
+          .videoFilters('scale=w=640:h=360')
+          .outputOptions('-c:a copy');
+
+        // Run the command and log the output
+        command.on('error', (err) => {
+          console.error('An error occurred:', err.message);
+        }).on('end', () => {
+          console.log('Compression complete!');
+          const INSERT_QUERY = `INSERT INTO USERVIDEOLIST (TITLE, USERID, VIDEOONE, VIDEOTWO, VIDEOTHREE, VIDEOFIVE, VIDEONOISEREDUCE) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+          const values = [TITLE, USERUNIQUEID, outputFile1080p, outputFile720p, outputFile540p, outputFile360p, NOISEREDUCE];
+          con.query(INSERT_QUERY, values, (err, result) => {
+            if (err) throw err;
+            console.log("Video inserted into database");
+            res.send("Video uploaded and compressed successfully");
+          });
+        }).run();
+
+      });
     });
   }
   else {
