@@ -120,6 +120,7 @@ app.get("/USERRESOURCE", (req, res, next) => {
 });
 
 app.post("/VIDEO", VIDEO.array('VIDEO'), (req, res, next) => {
+  // console.log(req);
   // console.log(req.files[0].filename);
   // console.log(req.files[0].destination);
 
@@ -128,20 +129,26 @@ app.post("/VIDEO", VIDEO.array('VIDEO'), (req, res, next) => {
   const USERUNIQUEID = req.body.USERUNIQUEID;
   const VIDEO = req.files[0].filename;
   const DESTINATION = req.files[0].destination;
-  const USERVIDEO = req.files[1].filename;
+  // const USERVIDEO = req.files[1].filename;
   // const USERDESTINATION = req.files[1].destination;
   const NOISEREDUCE = req.body.NOISEREDUCE;
   const pathToVideo = DESTINATION + VIDEO;
   const AUDIO = req.body.AUDIO;
   const targetFolder = './VIDEONOISEREDUCE';
 
-  fs.rename(req.files[1].path, `${targetFolder}/${USERVIDEO}`, function (err) {
-    if (err) throw err;
-    console.log('File moved successfully!');
-  });
+  // fs.rename(req.files[1].path, `${targetFolder}/${req.files[1].filename}`, function (err) {
+  //   if (err) throw err;
+  //   console.log('File moved successfully!');
+  // });
 
 
   if (AUDIO == "yes") {
+
+    fs.rename(req.files[1].path, `${targetFolder}/${req.files[1].filename}`, function (err) {
+      if (err) throw err;
+      console.log('File moved successfully!');
+    });
+
     const INPUTFILEPATH = DESTINATION + VIDEO;
     const FILEPATH = `VIDEONOISEREDUCE/${req.files[1].filename}`;
     const OUTPUTFILEPATH = `VIDEONOISEREDUCE/${VIDEO}` + ".mp4";
