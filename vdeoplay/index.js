@@ -491,7 +491,8 @@ app.post("/USERCOMMENT", (req, res) => {
   const ID = req.body.ID;
   // // const DESCRIPTION = req.body.DESCRIPTION;
   const USERCOMMENT = req.body.USERCOMMENT;
-  con.query(`INSERT INTO COMMENT (USERVIDEOID,USERCOMMENT) values ('${ID}','${USERCOMMENT}')`, (ERR, DATA, fields) => {
+  const USERGENERATED = req.body.USERID;
+  con.query(`INSERT INTO COMMENT (USERVIDEOID,USERCOMMENT,USERGENERATEDID) values ('${ID}','${USERCOMMENT}','${USERGENERATED}')`, (ERR, DATA, fields) => {
     if (ERR) {
       console.log(ERR);
     }
