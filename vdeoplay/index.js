@@ -492,7 +492,8 @@ app.post("/USERCOMMENT", (req, res) => {
   // // const DESCRIPTION = req.body.DESCRIPTION;
   const USERCOMMENT = req.body.USERCOMMENT;
   const USERGENERATED = req.body.USERID;
-  con.query(`INSERT INTO COMMENT (USERVIDEOID,USERCOMMENT,USERGENERATEDID) values ('${ID}','${USERCOMMENT}','${USERGENERATED}')`, (ERR, DATA, fields) => {
+  var VIDEOFIVE = req.body.VIDEOFIVE;
+  con.query(`INSERT INTO COMMENT (USERVIDEOID,USERCOMMENT,USERGENERATEDID,USERCOMMENTVIDEO) values ('${ID}','${USERCOMMENT}','${USERGENERATED}','${VIDEOFIVE}')`, (ERR, DATA, fields) => {
     if (ERR) {
       console.log(ERR);
     }
@@ -582,12 +583,13 @@ app.post("/STATUS", (req, res) => {
   var USERNAME = req.body.USERNAME;
   var STATUS = req.body.STATUS;
   var USERGENERATE = req.body.USERGENERATEDID;
-  if (STATUS == "Follow") {
-    STATUS = "Following";
+  var VIDEOFIVE = req.body.VIDEOFIVE;
+  if (STATUS == "Like") {
+    STATUS = "Liked";
   }
   console.log(STATUS);
 
-  con.query(`INSERT INTO USERSTATUS (USERID,STATUS,USERNAME,USERGENERATEID) values ('${ID}','${STATUS}','${USERNAME}','${USERGENERATE}')`, (ERR, DATA, fields) => {
+  con.query(`INSERT INTO USERSTATUS (USERID,STATUS,USERNAME,USERGENERATEID,USERVIDEO) values ('${ID}','${STATUS}','${USERNAME}','${USERGENERATE}','${VIDEOFIVE}')`, (ERR, DATA, fields) => {
     if (ERR) {
       console.log(ERR);
     }
@@ -650,6 +652,72 @@ const METHOD = (VIDEO, SONGNAME) => {
     }
   })
 }
+
+app.get("/USERCOMMENTBELLSTATUS", (req, res) => {
+  con.query("SELECT USERGENERATEDID ,USERCOMMENTVIDEO,count(*) AS USERCOUNT FROM COMMENT GROUP BY USERVIDEOID", (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+});
+
+app.get("/TOTALUSERCOMMENTBELLSTATUS", (req, res) => {
+  con.query("SELECT USERGENERATEDID,count(*) AS USERCOUNT FROM COMMENT GROUP BY USERGENERATEDID", (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+});
+
+app.get("/USERFOLLOWSTATUS", (req, res) => {
+  con.query("SELECT USERID,USERNAME,USERGENERATEID,USERVIDEO, count(*) AS USERCOUNT FROM USERSTATUS GROUP BY USERID", (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+});
+
+
+app.post("/FOLLOWSTATUS", (req, res) => {
+  console.log(req.body);
+  var ID = req.body.id;
+  var USERNAME = req.body.USERNAME;
+  var STATUSFOLLOW = req.body.STATUSFOLLOW;
+  var USERGENERATEDID = req.body.USERGENERATEDID;
+  if (STATUSFOLLOW == "Follow") {
+    STATUSFOLLOW = "Following";
+  }
+  console.log(STATUSFOLLOW);
+
+  con.query(`INSERT INTO USERSTATUSFOLLOW (USERID,USERFOLLOWSTATUS,USERNAME,USERGENERATEDID) values ('${ID}','${STATUSFOLLOW}','${USERNAME}','${USERGENERATEDID}')`, (ERR, DATA, fields) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+})
+
+app.get("/FOLLOWSTATUS", (req, res) => {
+  con.query("SELECT USERID,USERFOLLOWSTATUS  , count(*) AS USERCOUNT FROM USERSTATUSFOLLOW  GROUP BY USERID", (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+});
 
 app.post("/contact", (req, res) => {
   const MESSAGE = req.body.MESSAGE;
