@@ -155,22 +155,13 @@ app.post("/VIDEO", VIDEO.array('VIDEO'), (req, res, next) => {
     const OUTPUTFILEPATH = `VIDEONOISEREDUCE/${VIDEO}` + ".mp4";
     const temp_OUTPUTFILEPATH = `${OUTPUTFILEPATH}`;
 
-    command = `ffmpeg -i ${INPUTFILEPATH} -af "highpass=f=100,lowpass=f=1,volume=80dB" -c:a libmp3lame -q:a 2 ${OUTPUTFILEPATH}`;
+    command = `ffmpeg -i ${INPUTFILEPATH} -af "highpass=f=20,lowpass=f=1,volume=85dB,volume=3.0" -c:a libmp3lame -q:a 2 ${OUTPUTFILEPATH}`;
     exec(command, (err, stdout, stderr) => {
       if (err) {
         console.error(err);
         return;
       }
       console.log("BACKGROUND NOISE REOMVED");
-
-
-      COMMAND = `ffmpeg -y -i ${OUTPUTFILEPATH} -filter_complex "[0:a]equalizer=f=1000:width_type=h:width=100:g=-50,volume=15.0" ${OUTPUTFILEPATH + "temp.mp4"} && mv ${OUTPUTFILEPATH + "temp.mp4"} ${OUTPUTFILEPATH}`;
-      exec(COMMAND, (err, stdout, stderr) => {
-        if (err) {
-          console.error(err);
-          return;
-        }
-        console.log("NOICE ENHANCED");
 
         COMAND = `ffmpeg -y -i ${OUTPUTFILEPATH} -i ${FILEPATH} -filter_complex "[1:a]volume=0.5[a1];[0:a]equalizer=f=1000:width_type=h:width=100:g=-50,volume=15.0[a];[a][a1]amix=inputs=2" ${OUTPUTFILEPATH + "temp.mp4"} && mv ${OUTPUTFILEPATH + "temp.mp4"} ${OUTPUTFILEPATH}`;
         exec(COMAND, (err, stdout, stderr) => {
@@ -238,7 +229,6 @@ app.post("/VIDEO", VIDEO.array('VIDEO'), (req, res, next) => {
             });
           }).run();
         });
-      });
     });
   }
   else if (NOISEREDUCE == "yes") {
@@ -246,22 +236,13 @@ app.post("/VIDEO", VIDEO.array('VIDEO'), (req, res, next) => {
     const OUTPUTFILEPATH = `VIDEONOISEREDUCE/${VIDEO}` + ".mp4";
     const temp_OUTPUTFILEPATH = `${OUTPUTFILEPATH}`;
 
-    command = `ffmpeg -i ${INPUTFILEPATH} -af "highpass=f=100,lowpass=f=1,volume=80dB" -c:a libmp3lame -q:a 2 ${OUTPUTFILEPATH}`;
+    command = `ffmpeg -i ${INPUTFILEPATH} -af "highpass=f=20,lowpass=f=1,volume=85dB,volume=3.0" -c:a libmp3lame -q:a 2 ${OUTPUTFILEPATH}`;
     exec(command, (err, stdout, stderr) => {
       if (err) {
         console.error(err);
         return;
       }
       console.log("BACKGROUND NOISE REOMVED");
-
-
-      COMMAND = `ffmpeg -y -i ${OUTPUTFILEPATH} -filter_complex "[0:a]equalizer=f=1000:width_type=h:width=100:g=-50,volume=15.0" ${OUTPUTFILEPATH + "temp.mp4"} && mv ${OUTPUTFILEPATH + "temp.mp4"} ${OUTPUTFILEPATH}`;
-      exec(COMMAND, (err, stdout, stderr) => {
-        if (err) {
-          console.error(err);
-          return;
-        }
-        console.log("NOICE ENHANCED");
 
         const FILEONE = `${OUTPUTFILEPATH}` + "_" + "1080p" + ".mp4";
         const outputFile1080p = FILEONE.replace(/\.mp4_/, '_');
@@ -321,7 +302,6 @@ app.post("/VIDEO", VIDEO.array('VIDEO'), (req, res, next) => {
           });
         }).run();
 
-      });
     });
   }
   else if (USERAUDIO == "yes") {
@@ -718,6 +698,42 @@ app.get("/FOLLOWSTATUS", (req, res) => {
     }
   })
 });
+
+app.get("/USERDATAFOLLOWSTATUS", (req, res) => {
+  con.query("SELECT USERID,USERNAME,USERFOLLOWSTATUS,USERGENERATEDID,count(*) AS USERCOUNT FROM USERSTATUSFOLLOW  GROUP BY USERID", (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+});
+
+app.get("/USERFOLLOWUSERDATA", (req, res) => {
+  con.query("SELECT DISTINCT USERID ,USERFOLLOWSTATUS ,USERNAME ,USERGENERATEDID  FROM USERSTATUSFOLLOW", (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+});
+
+
+app.delete("/USERVIDEODELETE/:id", (req, res) => {
+  console.log(req.params.id);
+  con.query(`DELETE FROM USERVIDEOLIST WHERE id=${req.params.id}`, (ERR, DATA) => {
+    if (ERR) {
+      console.log(ERR);
+    }
+    else {
+      res.send(DATA);
+    }
+  })
+});
+
 
 app.post("/contact", (req, res) => {
   const MESSAGE = req.body.MESSAGE;
