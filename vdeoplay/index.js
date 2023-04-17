@@ -473,7 +473,8 @@ app.post("/USERCOMMENT", (req, res) => {
   const USERCOMMENT = req.body.USERCOMMENT;
   const USERGENERATED = req.body.USERID;
   var VIDEOFIVE = req.body.VIDEOFIVE;
-  con.query(`INSERT INTO COMMENT (USERVIDEOID,USERCOMMENT,USERGENERATEDID,USERCOMMENTVIDEO) values ('${ID}','${USERCOMMENT}','${USERGENERATED}','${VIDEOFIVE}')`, (ERR, DATA, fields) => {
+  var PARAMID = req.body.PARAMID;
+  con.query(`INSERT INTO COMMENT (USERVIDEOID,USERCOMMENT,USERGENERATEDID,USERCOMMENTVIDEO,USERPARAMID) values ('${ID}','${USERCOMMENT}','${USERGENERATED}','${VIDEOFIVE}','${PARAMID}')`, (ERR, DATA, fields) => {
     if (ERR) {
       console.log(ERR);
     }
@@ -645,7 +646,7 @@ app.get("/USERCOMMENTBELLSTATUS", (req, res) => {
 });
 
 app.get("/TOTALUSERCOMMENTBELLSTATUS", (req, res) => {
-  con.query("SELECT USERGENERATEDID,count(*) AS USERCOUNT FROM COMMENT GROUP BY USERGENERATEDID", (ERR, DATA) => {
+  con.query("SELECT USERGENERATEDID,USERPARAMID,count(*) AS USERCOUNT FROM COMMENT GROUP BY USERGENERATEDID", (ERR, DATA) => {
     if (ERR) {
       console.log(ERR);
     }
@@ -668,17 +669,17 @@ app.get("/USERFOLLOWSTATUS", (req, res) => {
 
 
 app.post("/FOLLOWSTATUS", (req, res) => {
-  console.log(req.body);
   var ID = req.body.id;
   var USERNAME = req.body.USERNAME;
   var STATUSFOLLOW = req.body.STATUSFOLLOW;
   var USERGENERATEDID = req.body.USERGENERATEDID;
+  var USERID = req.body.USERID;
   if (STATUSFOLLOW == "Follow") {
     STATUSFOLLOW = "Following";
   }
   console.log(STATUSFOLLOW);
 
-  con.query(`INSERT INTO USERSTATUSFOLLOW (USERID,USERFOLLOWSTATUS,USERNAME,USERGENERATEDID) values ('${ID}','${STATUSFOLLOW}','${USERNAME}','${USERGENERATEDID}')`, (ERR, DATA, fields) => {
+  con.query(`INSERT INTO USERSTATUSFOLLOW (USERID,USERFOLLOWSTATUS,USERNAME,USERGENERATEDID,USERUSERID) values ('${ID}','${STATUSFOLLOW}','${USERNAME}','${USERGENERATEDID}','${USERID}')`, (ERR, DATA, fields) => {
     if (ERR) {
       console.log(ERR);
     }
@@ -700,7 +701,7 @@ app.get("/FOLLOWSTATUS", (req, res) => {
 });
 
 app.get("/USERDATAFOLLOWSTATUS", (req, res) => {
-  con.query("SELECT USERID,USERNAME,USERFOLLOWSTATUS,USERGENERATEDID,count(*) AS USERCOUNT FROM USERSTATUSFOLLOW  GROUP BY USERID", (ERR, DATA) => {
+  con.query("SELECT USERID,USERNAME,USERFOLLOWSTATUS,USERGENERATEDID,USERUSERID,count(*) AS USERCOUNT FROM USERSTATUSFOLLOW  GROUP BY USERID", (ERR, DATA) => {
     if (ERR) {
       console.log(ERR);
     }
