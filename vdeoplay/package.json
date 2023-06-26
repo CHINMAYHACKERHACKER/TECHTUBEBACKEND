@@ -5,8 +5,6 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
-    "Dev": "nodemon server.js",
-    "Developement": "nodemon CHAT/server.js"
   },
   "author": "Adam La Morre",
   "license": "ISC",
