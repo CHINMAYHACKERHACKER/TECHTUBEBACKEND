@@ -17,6 +17,8 @@ const { Leopard } = require("@picovoice/leopard-node");
 var zip = require('file-zip');
 const ffmpeg = require('fluent-ffmpeg');
 const { exec } = require('child_process');
+require('dotenv').config()
+
 
 const app = express();
 app.use(express.json());
@@ -819,6 +821,6 @@ app.post("/contact", (req, res) => {
   });
 })
 
-app.listen(3001, () => {
+app.listen(process.env.PORT, () => {
   console.log("LISTENING TO PORT 3001");
 });
