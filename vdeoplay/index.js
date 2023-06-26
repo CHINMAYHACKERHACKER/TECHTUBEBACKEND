@@ -28,8 +28,8 @@ app.use("/AUDIO", express.static("./AUDIO"));
 app.use(express.static("./SONG"));
 app.use("/AD", express.static("./AD"));
 
-const CHAT_ENGINE_PROJECT_ID = "eed0fe8c-e598-4f52-a41c-e11bab68561d";
-const CHAT_ENGINE_PRIVATE_KEY = "a6e8c42a-4cd3-4776-a919-d450ee6be3e3";
+// const CHAT_ENGINE_PROJECT_ID = "eed0fe8c-e598-4f52-a41c-e11bab68561d";
+// const CHAT_ENGINE_PRIVATE_KEY = "a6e8c42a-4cd3-4776-a919-d450ee6be3e3";
 
 
 app.post("/signup", async (req, res) => {
@@ -444,12 +444,12 @@ app.post("/VIDEO", VIDEO.array('VIDEO'), (req, res, next) => {
     }).run();
   }
 
-  const songName = `${TITLE.replace(/ +/g, "")}`;
-  converter(pathToVideo, `./SONG/${songName}`);
+  // const songName = `${TITLE.replace(/ +/g, "")}`;
+  // converter(pathToVideo, `./SONG/${songName}`);
 
-  setTimeout(() => {
-    METHOD(VIDEO, songName)
-  }, 60000)
+  // setTimeout(() => {
+  //   METHOD(VIDEO, songName)
+  // }, 60000)
 
 });
 
@@ -621,18 +621,18 @@ app.get("/USERSONG", (req, res) => {
   });
 });
 
-const METHOD = (VIDEO, SONGNAME) => {
-  console.log("VIDEO", VIDEO);
-  console.log("SONGNAME", SONGNAME);
-  con.query(`IF  EXISTS(SELECT * FROM USERSONG WHERE SONG ='${"SONG/" + SONGNAME + ".mp3"}') 
-  THEN 
-     INSERT INTO USERSONG (SONG,USERVIDEO) VALUES ('${"SONG/" + SONGNAME + ".mp3"}','${VIDEO}');
-  END IF`, (ERR, DATA, fields) => {
-    if (ERR) {
-      console.log(ERR);
-    }
-  })
-}
+// const METHOD = (VIDEO, SONGNAME) => {
+//   console.log("VIDEO", VIDEO);
+//   console.log("SONGNAME", SONGNAME);
+//   con.query(`IF  EXISTS(SELECT * FROM USERSONG WHERE SONG ='${"SONG/" + SONGNAME + ".mp3"}') 
+//   THEN 
+//      INSERT INTO USERSONG (SONG,USERVIDEO) VALUES ('${"SONG/" + SONGNAME + ".mp3"}','${VIDEO}');
+//   END IF`, (ERR, DATA, fields) => {
+//     if (ERR) {
+//       console.log(ERR);
+//     }
+//   })
+// }
 
 app.get("/USERCOMMENTBELLSTATUS", (req, res) => {
   con.query("SELECT USERGENERATEDID ,USERCOMMENTVIDEO,count(*) AS USERCOUNT FROM COMMENT GROUP BY USERVIDEOID", (ERR, DATA) => {
@@ -701,7 +701,7 @@ app.get("/FOLLOWSTATUS", (req, res) => {
 });
 
 app.get("/USERDATAFOLLOWSTATUS", (req, res) => {
-  con.query("SELECT USERID,USERNAME,USERFOLLOWSTATUS,USERGENERATEDID,USERUSERID,count(*) AS USERCOUNT FROM USERSTATUSFOLLOW  GROUP BY USERID", (ERR, DATA) => {
+  con.query("SELECT USERID,USERNAME,USERFOLLOWSTATUS,USERGENERATEDID,USERUSERID,count(*) AS USERCOUNT FROM USERSTATUSFOLLOW  GROUP BY USERGENERATEDID", (ERR, DATA) => {
     if (ERR) {
       console.log(ERR);
     }
@@ -819,7 +819,6 @@ app.post("/contact", (req, res) => {
   });
 })
 
-// vvv On port 3001!
 app.listen(3001, () => {
   console.log("LISTENING TO PORT 3001");
 });
