@@ -9,14 +9,14 @@ const con = mysql.createPool({
     database: process.env.MYSQLDATABASE  
 })
 
-con.connect((ERR) => {
-    if (ERR) {
-        console.log("ERROR CONNECTING DATABASE");
-    }
-    else {
-        console.log("DATABASE CONNECTED");
+// con.connect((ERR) => {
+//     if (ERR) {
+//         console.log("ERROR CONNECTING DATABASE");
+//     }
+//     else {
+//         console.log("DATABASE CONNECTED");
 
-    }
-})
+//     }
+// })
 
 module.exports = con;
